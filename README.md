@@ -1,7 +1,7 @@
 # PetShopUsandoFILEemC
 Primeiro Projeto de Tópicos em Programação Orientada a Objetos
 
-Como testar o código:
+Como testar o código:\n
 1.Abra o arquivo TXT
 2.Copie tudo que está escrito nele
 3.Abra o site https://www.onlinegdb.com/#
