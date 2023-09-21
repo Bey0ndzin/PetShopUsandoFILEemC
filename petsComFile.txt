@@ -1,0 +1,298 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct
+{
+    unsigned int id;
+    char         nome    [21];
+    unsigned int idade;
+    char         especie [31];
+    char         raca    [31];
+    char         cor     [21];
+    char         tutor   [41];
+}
+Pet;
+
+unsigned int numero_natural_digitado (char pedido [], char mensagem [], unsigned int maximo)
+{
+    char   digitacao [1025];
+    char*  erro;
+    double real;
+    
+    for(;;) // forever
+    {
+        printf("%s",pedido);
+        fgets (digitacao,1024,stdin);
+
+        real=strtod(digitacao,&erro);
+        
+        if (*erro!=10) // foi digitado algum caractere não numérico
+        {
+            printf("%s",mensagem);
+        }
+        else if (real<0 || real>maximo)
+        {
+            printf("%s",mensagem);
+        }
+        else if (real != (unsigned int)real) // foi digitado algum número quebrado, tipo 1.5
+        {
+            printf("%s",mensagem);
+        }      
+        else
+            break;
+    }  
+    
+    return (unsigned int)real;
+}
+
+void digite_texto (char texto [], unsigned int maximo, char pedido [], char mensagem [])
+{
+    unsigned int errado, i;
+    char digitacao [1025];
+    
+    for(;;) // forever
+    {
+        printf("%s",pedido);
+        fgets (digitacao,maximo,stdin);
+        digitacao[strlen(digitacao)-1]='\0';
+        
+        errado=0/*falso*/;
+        for (i=0; digitacao[i]!='\0';i++)
+            if (!(digitacao[i]==' ' || (digitacao[i]>='a' && digitacao[i]<='z') || (digitacao[i]>='A' && digitacao[i]<='Z')))
+            {
+                errado=1/*verdadeiro*/;
+                break; // para a verificação, sem nem chegar na marca de fim, '\0', pois já achei um erro
+            }
+            
+        if (errado)
+        {
+            printf("%s",mensagem);
+        }
+        else
+            break; // para o forever que fica pedindo digitação e redigitação até digitar corretamente
+    }
+    
+    strcpy(texto,digitacao);
+}
+
+unsigned int/*boolean*/ id_ja_cadastrado (Pet cli [], unsigned int qtd, unsigned int id)
+{
+    int i;
+    for (i=0; i<qtd; i++)
+        if (id==cli[i].id)
+            return 1/*verdadeiro*/;
+            
+    return 0/*falso*/;
+}
+
+void cadastrar_pet (FILE* arquivo, unsigned int* qtd)
+{
+    fflush(arquivo); //Limpo o buffer do arquivo para não ter problemas inserindo valores
+    unsigned int id, idade; //Estou supondo que não passa do ID não passará de 4 dígitos e o mês também
+    char nome[21], especie[31], raca[31], cor[21], tutor[41]; //Inicio variaveis com seus respectivos tamanho
+    char total[156]; //Inicio uma variavel que será usada para juntar todas as variáveis anteriores
+    if (*qtd==1000)
+    {
+        printf ("Não há espaço para mais pets!\n\n");
+    }
+    else
+    {
+        id = (*qtd)+1;
+        
+        digite_texto (nome,20,"Nome............: ","O nome deve conter até 20 letras e/ou espaços em branco\n");
+
+        idade=numero_natural_digitado ("Idade (em meses): ","A Idade deve ser 1 ou 2 ou 3 ou etc, até 480; tente novamente!\n",480);
+
+        digite_texto (especie,30,"Especie.........: ","A especie deve conter até 30 letras e/ou espaços em branco\n");
+        digite_texto (raca,   30,"Raça............: ","A raça deve conter até 30 letras e/ou espaços em branco\n");
+        digite_texto (cor,    20,"Cor.............: ","A cor deve conter até 20 letras e/ou espaços em branco\n");
+        digite_texto (tutor,  40,"Tutor...........: ","O nome do tutor deve conter até 40 letras e/ou espaços em branco\n");
+
+        (*qtd)++;
+        
+        sprintf(total, "%-4d%-20s%-4d%-30s%-30s%-20s%-40s\n", id, nome, idade, especie, raca, cor, tutor); //Junto todaas as váriaveis
+        //Em uma só e dou um padding para dar espaço para cada váriavel
+        fprintf(arquivo, total); //Escrevo essa váriavel no arquivo passado por parametro
+        printf("Cadastro realizado com sucesso!\n\n");
+    }
+}
+
+void listar_pets (Pet cli [], unsigned int qtd)
+{
+    unsigned int i;
+    
+    if (qtd==0)
+    {
+        printf ("Não há pets cadastrados!\n\n");
+        return;
+    }
+    
+    for (i=0; i<qtd; i++)
+        printf ("%u %s %u mês(es) %s %s %s %s\n", cli[i].id, cli[i].nome, cli[i].idade, cli[i].especie, cli[i].raca, cli[i].cor, cli[i].tutor);
+
+    printf("\n");
+}
+
+void listar_pet (FILE* arquivo, unsigned int qtd)
+{
+    fflush(arquivo); //Limpo o buffer do arquivo para evitar conflitos
+    unsigned int id;
+    char petLido[156]; //Inicio uma variavel para guardar o pet lido no arquivo
+    
+    if (qtd==0)
+    {
+        printf ("Não há pets cadastrados!\n\n");
+        return;
+    }
+    if(arquivo == NULL)
+        printf("Não foi possível ler o arquivo\n\n");
+    
+    id=numero_natural_digitado("Id: ","O Id deve ser 1 ou 2 ou 3 ou etc; tente novamente!\n\n",4294967295);
+    id=id+'0'; //Conversão do Id para char, possibilitando a comparação
+    while(fgets(&petLido, 156, arquivo)){ //Enquanto eu ler uma linha do arquivo
+        if (petLido[0] == id){ //Verifica se o Id do pet lido (será sempre o primeiro char) é igual ao id procurado
+            printf ("%s", petLido); //Se for, escreve os dados do pet lido
+            return;
+        }
+    }
+        
+    printf ("Não existe pet cadastrado com este id!\n\n");
+}
+
+void atualizar_pet(Pet cli[], unsigned int qtd)
+{
+    unsigned int opcao;
+    
+    if (qtd==0)
+    {
+        printf ("Não há pets cadastrados!\n\n");
+        return;
+    }
+    
+    unsigned int i, id=numero_natural_digitado("Id: ","O Id deve ser 1 ou 2 ou 3 ou etc; tente novamente!\n\n",4294967295);
+    
+    Pet* desejado;
+    for (i=0; i<qtd; i++)
+        if (id==cli[i].id)
+            desejado = &cli[i];
+        
+    if(desejado == 0){
+        printf ("Não existe pet cadastrado com este id!\n\n");
+        return;
+    }
+    else{
+        printf("ATUALIZAR UM PET\n");
+        do
+        {
+            printf("0) Atualizar nome\n");
+            printf("1) Atualizar idade\n");
+            printf("2) Atualizar especie\n");
+            printf("3) Atualizar raca\n");
+            printf("4) Atualizar cor\n");
+            printf("5) Atualizar tutor\n");
+            printf("6) Sair\n");
+            opcao=numero_natural_digitado ("Opção? ","Opções válidas estão entre 0 e 6; tente novamente!\n\n",6);
+            
+            switch (opcao)
+            {
+                case 0:
+                    digite_texto (&*desejado->nome,20,"Nome............: ","O nome deve conter até 20 letras e/ou espaços em branco\n");
+                    break;
+                    
+                case 1:
+                    desejado->idade=numero_natural_digitado ("Idade (em meses): ","A Idade deve ser 1 ou 2 ou 3 ou etc, até 480; tente novamente!\n",480);
+                    break;
+                    
+                case 2:
+                    digite_texto (&*desejado->especie,30,"Especie.........: ","A especie deve conter até 30 letras e/ou espaços em branco\n");
+                    break;
+                    
+                case 3:
+                    digite_texto (&*desejado->raca,   30,"Raça............: ","A raça deve conter até 30 letras e/ou espaços em branco\n");
+                    break;
+                    
+                case 4:
+                    digite_texto (&*desejado->cor,    20,"Cor.............: ","A cor deve conter até 20 letras e/ou espaços em branco\n");
+                    break;
+                    
+                case 5:
+                    digite_texto (&*desejado->tutor,  40,"Tutor...........: ","O nome do tutor deve conter até 40 letras e/ou espaços em branco\n");
+                    break;
+            }
+        }
+        while (opcao!=6);
+    
+    printf("Pet atualizado com sucesso!\n\n");
+    }
+}
+
+void excluir_pet (Pet cli [], unsigned int* qtd)
+{
+    unsigned int i, id=numero_natural_digitado("Id: ","O Id deve ser 1 ou 2 ou 3 ou etc; tente novamente!\n",4294967295);
+    
+    for (i=0; i<*qtd; i++)
+        if (id==cli[i].id)
+            break;
+            
+    if (i==*qtd)
+    {
+        printf ("Não existe pet cadastrado com este id!\n\n");
+        return;
+    }
+    
+    for ( ; i<*qtd-1; i++)
+        cli[i] = cli[i+1];
+    
+    (*qtd)--;
+    
+    printf("Exclusão realizada com sucesso!\n\n");
+}
+
+int main()
+{
+    FILE* arquivo = fopen("pets.txt" , "a+");
+    unsigned int qtd_de_pets=1, opcao;
+    
+    printf("PROGRAMA PARA GERENCIAR PETS\n\n");
+    
+    do
+    {
+        printf("0) Cadastrar pet\n");
+        printf("1) Listar    pet\n");
+        printf("2) Listar    pets\n");
+        printf("3) Atualizar pets\n");
+        printf("4) Excluir   pet\n");
+        printf("5) Sair\n");
+        opcao=numero_natural_digitado ("Opção? ","Opções válidas estão entre 0 e 5; tente novamente!\n\n",5);
+        
+        switch (opcao)
+        {
+            case 0:
+                cadastrar_pet(arquivo, &qtd_de_pets);
+                break;
+                
+            case 1:
+                listar_pet(arquivo, qtd_de_pets);
+                break;
+                
+            case 2:
+                listar_pets(arquivo, qtd_de_pets);
+                break;
+                
+            case 3:
+                atualizar_pet(arquivo, qtd_de_pets);
+                break;
+                
+            case 4:
+                excluir_pet(arquivo, &qtd_de_pets);
+                break;
+        }
+    }
+    while (opcao!=5);
+    
+    printf("OBRIGADO POR USAR ESTE PROGRAMA!\n\n");
+    fclose(arquivo);
+
+    return 0;
+}
