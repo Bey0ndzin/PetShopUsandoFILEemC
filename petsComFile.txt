@@ -89,7 +89,6 @@ unsigned int/*boolean*/ id_ja_cadastrado (Pet cli [], unsigned int qtd, unsigned
 void cadastrar_pet (FILE* arquivo, unsigned int* qtd)
 {
     rewind(arquivo);
-    fflush(arquivo);
     unsigned int id, idade; //Estou supondo que não passa do ID não passará de 4 dígitos e o mês também
     char nome[21], especie[31], raca[31], cor[21], tutor[41]; //Inicio variaveis com seus respectivos tamanho
     char total[156]; //Inicio uma variavel que será usada para juntar todas as variáveis anteriores
@@ -112,11 +111,12 @@ void cadastrar_pet (FILE* arquivo, unsigned int* qtd)
 
         (*qtd)++;
         
-        sprintf(total, "%d|%s|%d|%s|%s|%s|%s\n", id, nome, idade, especie, raca, cor, tutor); //Junto todaas as váriaveis
+        sprintf(total, "%d %s %d %s %s %s %s\n", id, nome, idade, especie, raca, cor, tutor); //Junto todaas as váriaveis
         //Em uma só e dou um padding para dar espaço para cada váriavel
-        fprintf(arquivo, total); //Escrevo essa váriavel no arquivo passado por parametro
+        fwrite(&total, 1, 156, arquivo); //Escrevo essa váriavel no arquivo passado por parametro
+        
         printf("Cadastro realizado com sucesso!\n\n");
-        fflush(arquivo); //Atualiza o arquivo, inserindo imediatamente o dado.
+        fflush(arquivo);
     }
 }
 
@@ -334,11 +334,10 @@ void excluir_pet (FILE* arquivo, unsigned int* qtd)
 
 int main()
 {
-    FILE* arquivo = fopen("pets.txt" , "a+");
+    FILE* arquivo = fopen("pets.txt" , "ab+");
     unsigned int qtd_de_pets=0, opcao;
-    
-    char inutil[156];
-    while(fgets(&inutil, 156, arquivo)){
+    Pet cliente[1000];
+    while(fread(&cliente[qtd_de_pets], sizeof(Pet), 1,arquivo) == 1){
         qtd_de_pets++;
     }
     
