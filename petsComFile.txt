@@ -88,6 +88,8 @@ unsigned int/*boolean*/ id_ja_cadastrado (Pet cli [], unsigned int qtd, unsigned
 
 void cadastrar_pet (FILE* arquivo, unsigned int* qtd)
 {
+    rewind(arquivo);
+    fflush(arquivo);
     unsigned int id, idade; //Estou supondo que não passa do ID não passará de 4 dígitos e o mês também
     char nome[21], especie[31], raca[31], cor[21], tutor[41]; //Inicio variaveis com seus respectivos tamanho
     char total[156]; //Inicio uma variavel que será usada para juntar todas as variáveis anteriores
@@ -133,6 +135,9 @@ void listar_pets (FILE* arquivo, unsigned int qtd)
     }
     
     while(fgets(&petLido, sizeof(Pet), arquivo)){
+        for(int i = 0; i<156; i++)
+            if(petLido[i] == '|')
+                petLido[i] = ' ';
         printf("%s", petLido);
     }
         
@@ -159,6 +164,9 @@ void listar_pet (FILE* arquivo, unsigned int qtd)
     id=id+'0'; //Conversão do Id para char, possibilitando a comparação
     while(fgets(&petLido, 156, arquivo)){ //Enquanto eu ler uma linha do arquivo
         if (petLido[0] == id){ //Verifica se o Id do pet lido (será sempre o primeiro char) é igual ao id procurado
+            for(int i = 0; i<156; i++)
+                if(petLido[i] == '|')
+                    petLido[i] = ' ';
             printf ("%s", petLido); //Se for, escreve os dados do pet lido
             return;
         }
@@ -169,6 +177,8 @@ void listar_pet (FILE* arquivo, unsigned int qtd)
 
 void atualizar_pet(FILE* arquivo, unsigned int qtd)
 {
+    rewind(arquivo);
+    fflush(arquivo);
     unsigned int opcao;
     char petLido[156];
     FILE* temporario = fopen("petsTemp.txt", "a+");
@@ -211,6 +221,7 @@ void atualizar_pet(FILE* arquivo, unsigned int qtd)
             strcpy(&desejado.tutor, token);
             
             achou = '1';
+            break;
         }else{
             fprintf(temporario, petLido);
         }
@@ -236,27 +247,27 @@ void atualizar_pet(FILE* arquivo, unsigned int qtd)
             switch (opcao)
             {
                 case 0:
-                    digite_texto (&desejado->nome,20,"Nome............: ","O nome deve conter até 20 letras e/ou espaços em branco\n");
+                    digite_texto (&desejado.nome,20,"Nome............: ","O nome deve conter até 20 letras e/ou espaços em branco\n");
                     break;
                     
                 case 1:
-                    desejado->idade=numero_natural_digitado ("Idade (em meses): ","A Idade deve ser 1 ou 2 ou 3 ou etc, até 480; tente novamente!\n",480);
+                    desejado.idade=numero_natural_digitado ("Idade (em meses): ","A Idade deve ser 1 ou 2 ou 3 ou etc, até 480; tente novamente!\n",480);
                     break;
                     
                 case 2:
-                    digite_texto (&desejado->especie,30,"Especie.........: ","A especie deve conter até 30 letras e/ou espaços em branco\n");
+                    digite_texto (&desejado.especie,30,"Especie.........: ","A especie deve conter até 30 letras e/ou espaços em branco\n");
                     break;
                     
                 case 3:
-                    digite_texto (&desejado->raca,   30,"Raça............: ","A raça deve conter até 30 letras e/ou espaços em branco\n");
+                    digite_texto (&desejado.raca,   30,"Raça............: ","A raça deve conter até 30 letras e/ou espaços em branco\n");
                     break;
                     
                 case 4:
-                    digite_texto (&desejado->cor,    20,"Cor.............: ","A cor deve conter até 20 letras e/ou espaços em branco\n");
+                    digite_texto (&desejado.cor,    20,"Cor.............: ","A cor deve conter até 20 letras e/ou espaços em branco\n");
                     break;
                     
                 case 5:
-                    digite_texto (&desejado->tutor,  40,"Tutor...........: ","O nome do tutor deve conter até 40 letras e/ou espaços em branco\n");
+                    digite_texto (&desejado.tutor,  40,"Tutor...........: ","O nome do tutor deve conter até 40 letras e/ou espaços em branco\n");
                     break;
             }
         }
@@ -268,8 +279,14 @@ void atualizar_pet(FILE* arquivo, unsigned int qtd)
         fprintf(temporario, total);
         
         while(fgets(&petLido, 156, arquivo)){
-            
+            fprintf(temporario, petLido);
         }
+        
+        fclose(arquivo);
+        fclose(temporario);
+        
+        remove("pets.txt");
+        rename("petsTemp.txt", "pets.txt");
     
         printf("Pet atualizado com sucesso!\n\n");
     }
@@ -277,6 +294,8 @@ void atualizar_pet(FILE* arquivo, unsigned int qtd)
 
 void excluir_pet (FILE* arquivo, unsigned int* qtd)
 {
+    rewind(arquivo);
+    fflush(arquivo);
     unsigned int id=numero_natural_digitado("Id: ","O Id deve ser 1 ou 2 ou 3 ou etc; tente novamente!\n",4294967295);
     FILE* temporario = fopen("petsTemp.txt", "a+");
     char petLido[156];
@@ -316,7 +335,12 @@ void excluir_pet (FILE* arquivo, unsigned int* qtd)
 int main()
 {
     FILE* arquivo = fopen("pets.txt" , "a+");
-    unsigned int qtd_de_pets=2, opcao;
+    unsigned int qtd_de_pets=0, opcao;
+    
+    char inutil[156];
+    while(fgets(&inutil, 156, arquivo)){
+        qtd_de_pets++;
+    }
     
     printf("PROGRAMA PARA GERENCIAR PETS\n\n");
     
@@ -346,6 +370,7 @@ int main()
                 
             case 3:
                 atualizar_pet(arquivo, qtd_de_pets);
+                arquivo = fopen("pets.txt", "a+");
                 break;
                 
             case 4:
