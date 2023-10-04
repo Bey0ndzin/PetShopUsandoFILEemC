@@ -110,7 +110,7 @@ void cadastrar_pet (FILE* arquivo, unsigned int* qtd)
 
         (*qtd)++;
         
-        sprintf(total, "%-4d%-20s%-4d%-30s%-30s%-20s%-40s\n", id, nome, idade, especie, raca, cor, tutor); //Junto todaas as váriaveis
+        sprintf(total, "%d|%s|%d|%s|%s|%s|%s\n", id, nome, idade, especie, raca, cor, tutor); //Junto todaas as váriaveis
         //Em uma só e dou um padding para dar espaço para cada váriavel
         fprintf(arquivo, total); //Escrevo essa váriavel no arquivo passado por parametro
         printf("Cadastro realizado com sucesso!\n\n");
@@ -167,9 +167,10 @@ void listar_pet (FILE* arquivo, unsigned int qtd)
     printf ("Não existe pet cadastrado com este id!\n\n");
 }
 
-void atualizar_pet(Pet cli[], unsigned int qtd)
+void atualizar_pet(FILE* arquivo, unsigned int qtd)
 {
     unsigned int opcao;
+    char petLido[156];
     
     if (qtd==0)
     {
@@ -177,12 +178,13 @@ void atualizar_pet(Pet cli[], unsigned int qtd)
         return;
     }
     
-    unsigned int i, id=numero_natural_digitado("Id: ","O Id deve ser 1 ou 2 ou 3 ou etc; tente novamente!\n\n",4294967295);
+    unsigned int id=numero_natural_digitado("Id: ","O Id deve ser 1 ou 2 ou 3 ou etc; tente novamente!\n\n",4294967295);
     
-    Pet* desejado;
-    for (i=0; i<qtd; i++)
-        if (id==cli[i].id)
-            desejado = &cli[i];
+    while(fgets(&petLido, 156, arquivo)){ //Enquanto eu ler uma linha do arquivo
+        if (petLido[0] == id){ //Verifica se o Id do pet lido (será sempre o primeiro char) é igual ao id procurado
+            char* token;
+        }
+    }
         
     if(desejado == 0){
         printf ("Não existe pet cadastrado com este id!\n\n");
@@ -236,35 +238,46 @@ void atualizar_pet(Pet cli[], unsigned int qtd)
 
 void excluir_pet (FILE* arquivo, unsigned int* qtd)
 {
-    unsigned int i, id=numero_natural_digitado("Id: ","O Id deve ser 1 ou 2 ou 3 ou etc; tente novamente!\n",4294967295);
+    unsigned int id=numero_natural_digitado("Id: ","O Id deve ser 1 ou 2 ou 3 ou etc; tente novamente!\n",4294967295);
+    FILE* temporario = fopen("petsTemp.txt", "a+");
+    char petLido[156];
     
-    for (i=0; i<*qtd; i++)
-        if (id==cli[i].id)
-            break;
+    id=id+'0'; //Conversão do Id para char, possibilitando a comparação
+    char achou = '0';
+    while(fgets(&petLido, 156, arquivo)){ //Enquanto eu ler uma linha do arquivo
+        if (petLido[0] != id){ //Verifica se o Id do pet lido (será sempre o primeiro char) é igual ao id procurado
+            fprintf(temporario, petLido);
+        }else{
+            achou = '1';
+        }
+        
+    }
             
-    if (i==*qtd)
+    if (achou=='0')
     {
         printf ("Não existe pet cadastrado com este id!\n\n");
+        
+        fclose(temporario);
+        remove("petsTemp.txt");
+        
         return;
+    }else{
+        (*qtd)--;
+        
+        fclose(arquivo);
+        fclose(temporario);
+        
+        remove("pets.txt");
+        rename("petsTemp.txt", "pets.txt");
     }
     
-    for ( ; i<*qtd-1; i++)
-        cli[i] = cli[i+1];
-    
-    (*qtd)--;
-    
     printf("Exclusão realizada com sucesso!\n\n");
-}
-
-void lerArquivo(FILE* arquivo, Pet cli[])
-{
-    
 }
 
 int main()
 {
     FILE* arquivo = fopen("pets.txt" , "a+");
-    unsigned int qtd_de_pets=1, opcao;
+    unsigned int qtd_de_pets=2, opcao;
     
     printf("PROGRAMA PARA GERENCIAR PETS\n\n");
     
@@ -298,6 +311,7 @@ int main()
                 
             case 4:
                 excluir_pet(arquivo, &qtd_de_pets);
+                arquivo = fopen("pets.txt", "a+");
                 break;
         }
     }
