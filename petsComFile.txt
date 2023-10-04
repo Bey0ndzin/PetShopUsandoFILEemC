@@ -88,7 +88,6 @@ unsigned int/*boolean*/ id_ja_cadastrado (Pet cli [], unsigned int qtd, unsigned
 
 void cadastrar_pet (FILE* arquivo, unsigned int* qtd)
 {
-    fflush(arquivo); //Limpo o buffer do arquivo para não ter problemas inserindo valores
     unsigned int id, idade; //Estou supondo que não passa do ID não passará de 4 dígitos e o mês também
     char nome[21], especie[31], raca[31], cor[21], tutor[41]; //Inicio variaveis com seus respectivos tamanho
     char total[156]; //Inicio uma variavel que será usada para juntar todas as variáveis anteriores
@@ -115,12 +114,17 @@ void cadastrar_pet (FILE* arquivo, unsigned int* qtd)
         //Em uma só e dou um padding para dar espaço para cada váriavel
         fprintf(arquivo, total); //Escrevo essa váriavel no arquivo passado por parametro
         printf("Cadastro realizado com sucesso!\n\n");
+        fflush(arquivo); //Atualiza o arquivo, inserindo imediatamente o dado.
     }
 }
 
-void listar_pets (Pet cli [], unsigned int qtd)
+void listar_pets (FILE* arquivo, unsigned int qtd)
 {
+    rewind(arquivo);
+    fflush(arquivo);
+    
     unsigned int i;
+    char petLido[156];
     
     if (qtd==0)
     {
@@ -128,14 +132,17 @@ void listar_pets (Pet cli [], unsigned int qtd)
         return;
     }
     
-    for (i=0; i<qtd; i++)
-        printf ("%u %s %u mês(es) %s %s %s %s\n", cli[i].id, cli[i].nome, cli[i].idade, cli[i].especie, cli[i].raca, cli[i].cor, cli[i].tutor);
+    while(fgets(&petLido, sizeof(Pet), arquivo)){
+        printf("%s", petLido);
+    }
+        
 
     printf("\n");
 }
 
 void listar_pet (FILE* arquivo, unsigned int qtd)
 {
+    rewind(arquivo);
     fflush(arquivo); //Limpo o buffer do arquivo para evitar conflitos
     unsigned int id;
     char petLido[156]; //Inicio uma variavel para guardar o pet lido no arquivo
@@ -227,7 +234,7 @@ void atualizar_pet(Pet cli[], unsigned int qtd)
     }
 }
 
-void excluir_pet (Pet cli [], unsigned int* qtd)
+void excluir_pet (FILE* arquivo, unsigned int* qtd)
 {
     unsigned int i, id=numero_natural_digitado("Id: ","O Id deve ser 1 ou 2 ou 3 ou etc; tente novamente!\n",4294967295);
     
@@ -247,6 +254,11 @@ void excluir_pet (Pet cli [], unsigned int* qtd)
     (*qtd)--;
     
     printf("Exclusão realizada com sucesso!\n\n");
+}
+
+void lerArquivo(FILE* arquivo, Pet cli[])
+{
+    
 }
 
 int main()
