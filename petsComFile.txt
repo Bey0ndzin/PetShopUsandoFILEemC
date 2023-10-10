@@ -106,9 +106,9 @@ void cadastrar_pet (Pet cli[], FILE* arquivo, unsigned int* qtd)
         digite_texto (cli[*qtd].cor,    20,"Cor.............: ","A cor deve conter até 20 letras e/ou espaços em branco\n");
         digite_texto (cli[*qtd].tutor,  40,"Tutor...........: ","O nome do tutor deve conter até 40 letras e/ou espaços em branco\n");
 
+        fwrite(&cli[*qtd], sizeof(Pet), 1, arquivo); //Escrevo essa váriavel no arquivo passado por parametro
         (*qtd)++;
         
-        fwrite(&cli[*qtd], 1, 156, arquivo); //Escrevo essa váriavel no arquivo passado por parametro
         printf("Cadastro realizado com sucesso!\n\n");
         fflush(arquivo);
     }
@@ -155,9 +155,11 @@ void listar_pet (Pet cli[], unsigned int qtd)
     printf ("Não existe pet cadastrado com este id!\n\n");
 }
 
-void atualizar_pet(Pet cli[], unsigned int qtd)
+void atualizar_pet(Pet cli[], FILE* arquivo, unsigned int qtd)
 {
     unsigned int opcao;
+    
+    FILE* temporario = fopen("petsTemp.txt", "ab+");
     
     if (qtd==0)
     {
@@ -167,44 +169,15 @@ void atualizar_pet(Pet cli[], unsigned int qtd)
     
     unsigned int i, id=numero_natural_digitado("Id: ","O Id deve ser 1 ou 2 ou 3 ou etc; tente novamente!\n\n",4294967295);
     
-    Pet* desejado;
-    
-    for()
-    
-    while(fgets(&petLido, 156, arquivo)){ //Enquanto eu ler uma linha do arquivo
-        if (petLido[0] == id){ //Verifica se o Id do pet lido (será sempre o primeiro char) é igual ao id procurado
-        
-            char* token;
-            
-            token = strtok(petLido, "|");
-            desejado.id = atoi(token);
-            
-            token = strtok(NULL, "|");
-            strcpy(&desejado.nome, token);
-            
-            token = strtok(NULL, "|");
-            desejado.idade = atoi(token);
-            
-            token = strtok(NULL, "|");
-            strcpy(&desejado.especie, token);
-            
-            token = strtok(NULL, "|");
-            strcpy(&desejado.raca, token);
-            
-            token = strtok(NULL, "|");
-            strcpy(&desejado.cor, token);
-            
-            token = strtok(NULL, "|");
-            strcpy(&desejado.tutor, token);
-            
-            achou = '1';
-            break;
-        }else{
-            fprintf(temporario, petLido);
+    Pet* desejado = NULL;
+    for(i = 0; i < qtd; i++)
+    {
+        if(cli[i].id == id){
+            desejado = &cli[i];
         }
     }
         
-    if(achou == '0'){
+    if(desejado == NULL){
         printf ("Não existe pet cadastrado com este id!\n\n");
         return;
     }
@@ -224,44 +197,38 @@ void atualizar_pet(Pet cli[], unsigned int qtd)
             switch (opcao)
             {
                 case 0:
-                    digite_texto (&desejado.nome,20,"Nome............: ","O nome deve conter até 20 letras e/ou espaços em branco\n");
+                    digite_texto (&*desejado->nome,20,"Nome............: ","O nome deve conter até 20 letras e/ou espaços em branco\n");
                     break;
                     
                 case 1:
-                    desejado.idade=numero_natural_digitado ("Idade (em meses): ","A Idade deve ser 1 ou 2 ou 3 ou etc, até 480; tente novamente!\n",480);
+                    desejado->idade=numero_natural_digitado ("Idade (em meses): ","A Idade deve ser 1 ou 2 ou 3 ou etc, até 480; tente novamente!\n",480);
                     break;
                     
                 case 2:
-                    digite_texto (&desejado.especie,30,"Especie.........: ","A especie deve conter até 30 letras e/ou espaços em branco\n");
+                    digite_texto (&*desejado->especie,30,"Especie.........: ","A especie deve conter até 30 letras e/ou espaços em branco\n");
                     break;
                     
                 case 3:
-                    digite_texto (&desejado.raca,   30,"Raça............: ","A raça deve conter até 30 letras e/ou espaços em branco\n");
+                    digite_texto (&*desejado->raca,   30,"Raça............: ","A raça deve conter até 30 letras e/ou espaços em branco\n");
                     break;
                     
                 case 4:
-                    digite_texto (&desejado.cor,    20,"Cor.............: ","A cor deve conter até 20 letras e/ou espaços em branco\n");
+                    digite_texto (&*desejado->cor,    20,"Cor.............: ","A cor deve conter até 20 letras e/ou espaços em branco\n");
                     break;
                     
                 case 5:
-                    digite_texto (&desejado.tutor,  40,"Tutor...........: ","O nome do tutor deve conter até 40 letras e/ou espaços em branco\n");
+                    digite_texto (&*desejado->tutor,  40,"Tutor...........: ","O nome do tutor deve conter até 40 letras e/ou espaços em branco\n");
                     break;
             }
         }
         while (opcao!=6);
-        char total[156];
         
-        sprintf(total, "%d|%s|%d|%s|%s|%s|%s", desejado.id, desejado.nome, desejado.idade, desejado.raca,
-                                                desejado.especie, desejado.cor, desejado.tutor);
-        fprintf(temporario, total);
-        
-        while(fgets(&petLido, 156, arquivo)){
-            fprintf(temporario, petLido);
-        }
+        for(i = 0; i < qtd; i++)
+            fwrite(&cli[i], sizeof(Pet), 1, temporario);
         
         fclose(arquivo);
         fclose(temporario);
-        
+
         remove("pets.txt");
         rename("petsTemp.txt", "pets.txt");
     
@@ -269,42 +236,37 @@ void atualizar_pet(Pet cli[], unsigned int qtd)
     }
 }
 
-void excluir_pet (FILE* arquivo, unsigned int* qtd)
+void excluir_pet (Pet cli[], FILE* arquivo, unsigned int* qtd)
 {
-    rewind(arquivo);
-    fflush(arquivo);
-    unsigned int id=numero_natural_digitado("Id: ","O Id deve ser 1 ou 2 ou 3 ou etc; tente novamente!\n",4294967295);
-    FILE* temporario = fopen("petsTemp.txt", "a+");
-    char petLido[156];
+    unsigned int i, id=numero_natural_digitado("Id: ","O Id deve ser 1 ou 2 ou 3 ou etc; tente novamente!\n",4294967295);
     
-    id=id+'0'; //Conversão do Id para char, possibilitando a comparação
-    char achou = '0';
-    while(fgets(&petLido, 156, arquivo)){ //Enquanto eu ler uma linha do arquivo
-        if (petLido[0] != id){ //Verifica se o Id do pet lido (será sempre o primeiro char) é igual ao id procurado
-            fprintf(temporario, petLido);
-        }else{
-            achou = '1';
-        }
-        
+    FILE* temporario = fopen("petsTemp.txt", "ab+");
+    
+    for(i = 0; i < *qtd; i++)
+    {
+        if(id==cli[i].id)
+            break;
     }
-            
-    if (achou=='0')
+    
+    if(i == *qtd)
     {
         printf ("Não existe pet cadastrado com este id!\n\n");
-        
-        fclose(temporario);
-        remove("petsTemp.txt");
-        
         return;
-    }else{
-        (*qtd)--;
-        
-        fclose(arquivo);
-        fclose(temporario);
-        
-        remove("pets.txt");
-        rename("petsTemp.txt", "pets.txt");
     }
+    
+    for (; i<*qtd-1; i++)
+        cli[i] = cli[i+1];
+    
+    (*qtd)--;
+
+    for(i = 0; i < *qtd; i++)
+        fwrite(&cli[i], sizeof(Pet), 1, temporario);
+        
+    fclose(arquivo);
+    fclose(temporario);
+        
+    remove("pets.txt");
+    rename("petsTemp.txt", "pets.txt");
     
     printf("Exclusão realizada com sucesso!\n\n");
 }
@@ -314,7 +276,7 @@ int main()
     FILE* arquivo = fopen("pets.txt" , "ab+");
     unsigned int qtd_de_pets=0, opcao;
     Pet cliente[1000];
-    while(fread(&cliente[qtd_de_pets], sizeof(Pet), 1,arquivo) == 1){
+    while(fread(&cliente[qtd_de_pets], sizeof(Pet), 1, arquivo) == 1){
         qtd_de_pets++;
     }
     
@@ -345,11 +307,13 @@ int main()
                 break;
                 
             case 3:
-                atualizar_pet(cliente, qtd_de_pets);
+                atualizar_pet(cliente, arquivo, qtd_de_pets);
+                arquivo = fopen("pets.txt" , "ab+");
                 break;
                 
             case 4:
-                excluir_pet(cliente, &qtd_de_pets);
+                excluir_pet(cliente, arquivo, &qtd_de_pets);
+                arquivo = fopen("pets.txt" , "ab+");
                 break;
         }
     }
